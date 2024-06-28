@@ -3,6 +3,8 @@ import cloudflare from '@astrojs/cloudflare'
 
 import starlight from '@astrojs/starlight'
 
+import mdx from '@astrojs/mdx'
+
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
@@ -145,6 +147,7 @@ export default defineConfig({
           }
         },
       ]
-    })
+    }),
+    mdx()
   ]
 })
