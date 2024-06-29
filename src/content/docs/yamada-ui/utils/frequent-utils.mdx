@@ -6,7 +6,7 @@ description: Yamada UIで頻出のユーティリティを色々見てメモる
 import { LinkPreview } from 'astro-embed'
 import { Aside } from '@astrojs/starlight/components'
 
-### `/packages/utils/src/react.tsx`
+## `packages/utils/src/react.tsx`
 
 ### 1. DOMAttributes
 
@@ -22,11 +22,120 @@ import { Aside } from '@astrojs/starlight/components'
 
 ### 7. FunctionReturningPromise
 
+これは関数がPromiseを返すことを表現する型。
+
+```ts
+// packages/utils/src/react.tsx
+export type FunctionReturningPromise = (...args: any[]) => Promise<any>
+```
+
 ### 8. AsyncState
+
+非同期処理の状態を表現する方。
+
+```ts
+// packages/utils/src/react.tsx
+export type AsyncState<T> =
+  | {
+      loading: boolean
+      error?: undefined
+      value?: undefined
+    }
+  | {
+      loading: true
+      error?: Error | undefined
+      value?: T
+    }
+  | {
+      loading: false
+      error: Error
+      value?: undefined
+    }
+  | {
+      loading: false
+      error?: undefined
+      value: T
+    }
+```
+
+この型で4つの状態を表現できる。
+
+1. 初期状態
+2. ローディング中
+3. エラー
+4. 成功
+
+#### 1. 初期状態
+
+```ts
+{
+  loading: boolean
+  error?: undefined
+  value?: undefined
+}
+```
+
+#### 2. ローディング中
+
+```ts
+{
+  loading: true
+  error?: Error | undefined
+  value?: T
+}
+```
+
+#### 3. エラー
+
+```ts
+{
+  loading: false
+  error: Error
+  value?: undefined
+}
+```
+
+#### 4. 成功
+
+```ts
+{
+  loading: false
+  error?: undefined
+  value: T
+}
+```
 
 ### 9. PromiseType
 
+`Promise<T>`型から`T`型を抽出するだけの型。
+
+```ts
+// packages/utils/src/react.tsx
+export type PromiseType<P extends Promise<any>> =
+  P extends Promise<infer T> ? T : never
+```
+
 ### 10. AsyncFnReturn
+
+非同期関数の戻り値の型とその状態を管理するための型。  
+この型は、非同期関数の実行結果とその状態（ローディング、成功、エラー）を一緒に返すために使用される。
+
+```ts
+// packages/utils/src/react.tsx
+export type AsyncFnReturn<
+  T extends FunctionReturningPromise = FunctionReturningPromise
+> = [StateFromFunctionReturningPromise<T>, T]
+```
+
+#### StateFromFunctionReturningPromise
+
+`Promise<T>`を返す関数（もちろん非同期関数）の処理状態を表現する型。
+
+```ts
+// packages/utils/src/react.tsx
+type StateFromFunctionReturningPromise<T extends FunctionReturningPromise> =
+  AsyncState<PromiseType<ReturnType<T>>>
+```
 
 ### 11. AsyncStateRetry
 
@@ -81,6 +190,7 @@ export const createContext = <ContextType extends any = any>({
 SSR環境や`document`オブジェクトが存在しない環境において`useLayoutEffect`を`useEffect`にフォールバックしてくれるフック。
 
 ```ts
+// packages/utils/src/react.tsx
 export const useSafeLayoutEffect = Boolean(globalThis?.document)
   ? React.useLayoutEffect
   : React.useEffect
@@ -97,6 +207,7 @@ export const useSafeLayoutEffect = Boolean(globalThis?.document)
 コンポーネントがアンマウントされた時に、特定のコールバック関数を実行するためのフック。
 
 ```ts
+// packages/utils/src/react.tsx
 export const useUnmountEffect = (callback: () => void) =>
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => () => callback(), [])
@@ -117,6 +228,7 @@ export const useUnmountEffect = (callback: () => void) =>
 引数に渡したReactコンポーネントの子要素のうち、「有効な」子要素のみを抽出する関数。
 
 ```tsx
+// packages/utils/src/react.tsx
 export const getValidChildren = (
   children: React.ReactNode
 ): React.ReactElement[] =>
@@ -157,6 +269,7 @@ export const getValidChildren = (
 これは`React.isValidElement()`関数を拡張して作られている。
 
 ```ts
+// packages/utils/src/react.tsx
 export const isValidElement = (child: any): child is React.ReactNode =>
   React.isValidElement(child) || isString(child) || isNumber(child)
 ```
@@ -166,6 +279,7 @@ export const isValidElement = (child: any): child is React.ReactNode =>
 子要素の中から指定した型の子要素を探して抽出する関数。
 
 ```ts
+// packages/utils/src/react.tsx
 export const findChildren = (
   children: React.ReactElement<
     any,
@@ -210,6 +324,7 @@ describe('findChildren', () => {
 指定した型の子要素を含むかどうかを判定する関数。
 
 ```ts
+// packages/utils/src/react.tsx
 export const includesChildren = (
   children: React.ReactElement<
     any,
@@ -256,6 +371,7 @@ describe('includesChildren', () => {
 指定した型の子要素を排除する関数。
 
 ```ts
+// packages/utils/src/react.tsx
 export const omitChildren = (
   children: React.ReactElement<
     any,
@@ -289,6 +405,7 @@ describe('omitChildren', () => {
 条件を満たす最初の子要素を1つだけ抽出する`findChildren`とは異なり、こちらは条件を満たす子要素をすべて抽出する。
 
 ```ts
+// packages/utils/src/react.tsx
 export const pickChildren = (
   children: React.ReactElement<
     any,
@@ -325,6 +442,7 @@ describe('cx', () => {
 ReactのRefオブジェクトかどうかを判定する関数。
 
 ```ts
+// packages/utils/src/react.tsx
 export const isRefObject = (val: any): val is { current: any } =>
   isObject(val) && 'current' in val
 ```
@@ -339,6 +457,7 @@ export const isRefObject = (val: any): val is { current: any } =>
 Reactのrefを安全に設定できる関数。
 
 ```ts
+// packages/utils/src/react.tsx
 export const assignRef = <T extends any = any>(
   ref: ReactRef<T> | undefined,
   value: T
@@ -389,7 +508,7 @@ export const useCallbackRef = <T extends (...args: any[]) => any>(
 }
 ```
 
-### 細かく分割しながら処理を見ていく
+#### 細かく分割しながら処理を見ていく
 
 `useRef`フックを使ってコールバック関数への参照を保持するRefObjectを作成する。
 
@@ -510,6 +629,48 @@ const MyComponent = () => {
 ### 29. useAsync
 
 ### 30. useAsyncFunc
+
+```ts
+// packages/utils/src/react.tsx
+export const useAsyncFunc = <T extends FunctionReturningPromise>(
+  func: T,
+  deps: React.DependencyList = [],
+  initialState: StateFromFunctionReturningPromise<T> = { loading: false }
+): AsyncFnReturn<T> => {
+  const lastCallId = React.useRef(0)
+  const [isMounted] = useIsMounted()
+  const [state, setState] =
+    React.useState<StateFromFunctionReturningPromise<T>>(initialState)
+
+  const callback = React.useCallback(
+    (...args: Parameters<T>): ReturnType<T> => {
+      const callId = ++lastCallId.current
+
+      if (!state.loading)
+        setState((prevState) => ({ ...prevState, loading: true }))
+
+      return func(...args).then(
+        (value) => {
+          if (isMounted() && callId === lastCallId.current)
+            setState({ value, loading: false })
+
+          return value
+        },
+        (error) => {
+          if (isMounted() && callId === lastCallId.current)
+            setState({ error, loading: false })
+
+          return error
+        }
+      ) as ReturnType<T>
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    deps
+  )
+
+  return [state, callback as unknown as T]
+}
+```
 
 ### 31. useAsyncRetry
 
