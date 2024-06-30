@@ -1,0 +1,822 @@
+---
+title: Yamada UIのコンポーネントにスタイルを当てる仕組みを理解してメモ
+description: Yamada UIのコンポーネントにスタイルを当てる仕組みを理解してメモる
+---
+
+import { LinkPreview } from 'astro-embed'
+import { Aside } from '@astrojs/starlight/components'
+
+## 前提
+
+まずスモールスタートで理解していこう。  
+簡単そうなのは`Badge`かな。
+
+<LinkPreview id="https://yamada-ui.com/components/data-display/badge" />
+
+```tsx
+// packages/components/badge/src/badge.tsx
+export const Badge = forwardRef<BadgeProps, "span">((props, ref) => {
+  const [styles, mergedProps] = useComponentStyle("Badge", props)
+  const { className, ...rest } = omitThemeProps(mergedProps)
+
+  const css: CSSUIObject = {
+    display: "inline-block",
+    whiteSpace: "nowrap",
+    verticalAlign: "middle",
+    ...styles,
+  }
+
+  return (
+    <ui.span
+      ref={ref}
+      className={cx("ui-badge", className)}
+      __css={css}
+      {...rest}
+    />
+  )
+})
+```
+
+この`Badge`コンポーネントをこんな感じで使う場合を考える。
+
+```tsx
+<Badge colorScheme="secondary" variant="outline">
+  Badge
+</Badge>
+```
+
+このとき、`Badge`コンポーネントに渡されるpropsは以下の様になっている。
+
+```ts
+{
+  colorScheme: "secondary",
+  variant: "outline",
+  children: "Badge"
+}
+```
+
+### `useComponentStyle`(+ `setStyles`)
+
+まず、この行。  
+`useComponentStyle`というフックに`"Tag"`というコンポーネント名とpropsを渡して、その結果をタプルとして受け取っている。  
+
+```ts
+const [styles, mergedProps] = useComponentStyle("Badge", props)
+```
+
+ここでまず疑問に思うべきことは2つ。
+
+* `useComponentStyle`とは何をしているフックなのか。
+* `useComponentStyle`フックの結果として得られる`styles`と`mergedProps`とは何を表現しているのか。
+
+`useComponentStyle`フックの実装を見てみる。
+
+```ts
+// packages/core/src/components/use-component-style.tsx
+export const useComponentStyle = <Props extends Dict = Dict>(
+  name: string,
+  props: Props,
+  options?: UseComponentStyleOptions,
+) => setStyles<Props>(name, props, options)
+```
+
+これを見ると、`useComponentStyle`フックの実体はほぼほぼ`setStyles`という関数であることがわかる。  
+じゃあ次に`setStyles`関数の実装を見てみる。
+
+```ts
+const setStyles = <Props extends Dict = Dict, IsMulti extends boolean = false>(
+  name: string,
+  props: Props,
+  { isMulti, isProcessSkip, styles }: SetStylesOptions<IsMulti> = {},
+): [styles: Styles<IsMulti>, props: Props] => {
+  const { theme, themeScheme } = useTheme()
+  const { colorMode } = useColorMode()
+
+  const propsRef = useRef<Props>({} as Props)
+  const stylesRef = useRef<Styles<IsMulti>>(styles ?? {})
+
+  if (!isProcessSkip) {
+    const componentStyle = get<ComponentStyle | undefined>(
+      theme,
+      `components.${name}`,
+    )
+
+    props = merge(componentStyle?.defaultProps ?? {}, filterUndefined(props))
+
+    if (componentStyle) {
+      const args = omitObject(props, ["children"])
+
+      let styles = getStyles<IsMulti>(componentStyle.baseStyle ?? {}, {
+        theme,
+        colorMode,
+        themeScheme,
+        ...args,
+      })({ isMulti })
+
+      const variantStyles = getModifierStyles<IsMulti>(
+        props.variant,
+        componentStyle.variants ?? {},
+        { theme, colorMode, themeScheme, ...args },
+      )({ isMulti })
+
+      const sizeStyles = getModifierStyles<IsMulti>(
+        props.size,
+        componentStyle.sizes ?? {},
+        { theme, colorMode, themeScheme, ...args },
+      )({ isMulti })
+
+      styles = merge(styles, sizeStyles)
+      styles = merge(styles, variantStyles)
+
+      const isStylesEqual = isEqual(stylesRef.current, styles)
+
+      if (!isStylesEqual) stylesRef.current = styles
+    }
+  }
+
+  const isPropsEqual = isEqual(propsRef.current, props)
+
+  if (!isPropsEqual) propsRef.current = props
+
+  return [stylesRef.current, propsRef.current]
+}
+```
+
+この処理の全体をざっくり眺めると...
+
+1. 現在のテーマやカラーモードをする（フックはif文のコードブロック内で実行できないため）
+2. (`isProcessSkip`が`true`であれば)テーマ、カラーモード、propsを考慮したスタイルの計算が実行される
+3. 計算結果を返す
+
+という流れのようだ。
+
+#### 1. 現在のテーマやカラーモードをする（フックはif文のコードブロック内で実行できないため）
+
+まず処理1について。これら2行で現在のテーマやカラーモードを取得している事がわかる。  
+
+```ts
+const { theme, themeScheme } = useTheme()
+const { colorMode } = useColorMode()
+```
+
+<Aside>
+`useTheme`と`useColorMode`については後で確認する。  
+今はそういう役割を持ったフックである、ということを抑える。
+</Aside>
+
+#### 2. (`isProcessSkip`が`true`であれば)テーマ、カラーモード、propsを考慮したスタイルの計算が実行される
+
+`setStyles`の大部分を占めているのがこの処理2。  
+ここでコンポーネントに設定すべきスタイルの計算を実行していることが想像できる。  
+どこで使っているのかはわからないけど、`isProcessSkip`フラグを利用するとこの処理をスキップすることができるらしい。
+
+そこまで分かったら、`if(!isProcessSkip)`の中身だけ読めば良い。
+
+```ts
+const componentStyle = get<ComponentStyle | undefined>(
+  theme,
+  `components.${name}`,
+)
+
+props = merge(componentStyle?.defaultProps ?? {}, filterUndefined(props))
+
+if (componentStyle) {
+  const args = omitObject(props, ["children"])
+
+  let styles = getStyles<IsMulti>(componentStyle.baseStyle ?? {}, {
+    theme,
+    colorMode,
+    themeScheme,
+    ...args,
+  })({ isMulti })
+
+  const variantStyles = getModifierStyles<IsMulti>(
+    props.variant,
+    componentStyle.variants ?? {},
+    { theme, colorMode, themeScheme, ...args },
+  )({ isMulti })
+
+  const sizeStyles = getModifierStyles<IsMulti>(
+    props.size,
+    componentStyle.sizes ?? {},
+    { theme, colorMode, themeScheme, ...args },
+  )({ isMulti })
+
+  styles = merge(styles, sizeStyles)
+  styles = merge(styles, variantStyles)
+
+  const isStylesEqual = isEqual(stylesRef.current, styles)
+
+  if (!isStylesEqual) stylesRef.current = styles
+}
+```
+
+まずはこの処理。先述の`useTheme`フックの実行によって取得したThemeオブジェクトの中から、今回対象となるコンポーネントのスタイルを取得している。
+
+```ts
+const componentStyle = get<ComponentStyle | undefined>(
+  theme,
+  `components.${name}`,
+)
+```
+
+例えば、Yamada UIのStorybookで使用されているThemeに相当するThemeオブジェクトは以下のような構造になっている。
+
+```ts
+{
+  animations: {},
+  blurs: {
+    sm: "4px",
+    md: "8px",
+    lg: "12px",
+    xl: "16px",
+    2xl: "24px"
+  },
+  borders: {},
+  breakpoints: {
+    sm: "30em",
+    md: "48em",
+    lg: "61em",
+    xl: "80em",
+    2xl: "90em",
+    base": "9999px"
+  },
+  colors: {
+    // ...
+  },
+  // ...,
+  components: {
+    Accordion: {
+      // ...
+    },
+    Alert: {
+      // ...
+    },
+    // ...,
+    Badge: {
+      baseStyle: {
+        fontSize: "xs",
+        fontWeight: "bold",
+        px: 1,
+        rounded: "sm",
+        textTransform: "uppercase"
+      },
+      defaultProps: {
+        colorScheme: "primary",
+        variant: "subtle",
+      },
+      sizes: {},
+      variants: {
+        outline: {
+          // ...
+        },
+        solid: {
+          // ...
+        },
+        subtle: {
+          //...
+        },
+      },
+    },
+    // ...
+  },
+  // ...
+}
+```
+
+これを見ると、`Badge`コンポーネントに関するテーマは`components.Badge`というプロパティパスで取得できることが分かる。
+
+今回、`useComponentStyle`フックを以下のようにして実行していることを思い出す。
+
+```ts
+// packages/components/badge/src/badge.tsx
+const [styles, mergedProps] = useComponentStyle("Badge", props)
+```
+
+だからこの処理は、
+
+```ts
+const componentStyle = get<ComponentStyle | undefined>(
+  theme,
+  `components.${name}`,
+)
+```
+
+実際はこの様に実行されていることが分かる。
+
+```ts
+const componentStyle = get<ComponentStyle | undefined>(
+  theme,
+  `components.Badge`,
+)
+```
+
+というようになっている。
+
+こうして得られたコンポーネントスタイルとpropsをマージして、仮引数`props`を更新している。  
+（`props`そのものを更新しているのはあまりお利口ではないと思う...）
+
+```ts
+props = merge(componentStyle?.defaultProps ?? {}, filterUndefined(props))
+```
+
+<Aside>
+
+`merge`関数は、今のところ↓のように2つのオブジェクトをマージする関数である、ということを理解しておく。
+
+```ts
+const target = { a: 1, b: { c: 2 } }
+const source = { b: { d: 3 }, e: 4 }
+const result = merge(target, source)
+console.log(result) // { a: 1, b: { c: 2, d: 3 }, e: 4 }
+```
+
+また、同じプロパティパス同士の値は`source`側の値で`target`側の値が上書きされる。
+</Aside>
+
+例えば今回のケースでは、`componentStyle?.defaultProps ?? {}`の評価結果は以下のようになっており、
+
+```ts
+{
+  colorScheme: "primary",
+  variant: "subtle",
+}
+```
+
+一方で`filterUndefined(props)`の評価結果は以下のようになっている。
+
+```ts
+{
+  colorScheme: "secondary",
+  variant: "outline",
+  children: "Badge"
+}
+```
+
+<Aside>
+`filterUndefined`関数は、`props`から`null`と`undefined`のプロパティを削除する関数。
+</Aside>
+
+その結果、`props`は以下の値で更新される。  
+`componentStyle?.defaultProps ?? {}`側の`colorScheme`と`variant`が、`props`側の`colorScheme`と`variant`でそれぞれ上書きされている。
+
+```ts
+{
+  colorScheme: "secondary",
+  variant: "outline",
+  children: "Badge"
+}
+```
+
+そして次の処理に進む。今、`componentStyle`はTruthyであることが自明なので、以下の以下のif文の中の処理は実行される。
+
+```ts
+if (componentStyle) {
+  const args = omitObject(props, ["children"])
+
+  let styles = getStyles<IsMulti>(componentStyle.baseStyle ?? {}, {
+    theme,
+    colorMode,
+    themeScheme,
+    ...args,
+  })({ isMulti })
+
+  const variantStyles = getModifierStyles<IsMulti>(
+    props.variant,
+    componentStyle.variants ?? {},
+    { theme, colorMode, themeScheme, ...args },
+  )({ isMulti })
+
+  const sizeStyles = getModifierStyles<IsMulti>(
+    props.size,
+    componentStyle.sizes ?? {},
+    { theme, colorMode, themeScheme, ...args },
+  )({ isMulti })
+
+  styles = merge(styles, sizeStyles)
+  styles = merge(styles, variantStyles)
+
+  const isStylesEqual = isEqual(stylesRef.current, styles)
+
+  if (!isStylesEqual) stylesRef.current = styles
+}
+```
+
+まず、以下の処理によって`props`から`children`プロパティが削除され、`args`という変数が作成される。
+
+```ts
+const args = omitObject(props, ["children"])
+```
+
+その結果、変数`args`の中身はこうなっている。
+
+```ts
+{
+  colorScheme: "secondary",
+  variant: "outline",
+}
+```
+
+次にこの部分の処理を見ていく。
+
+```ts
+let styles = getStyles<IsMulti>(componentStyle.baseStyle ?? {}, {
+  theme,
+  colorMode,
+  themeScheme,
+  ...args,
+})({ isMulti })
+```
+
+`getStyles`関数についてはこの後ちゃんとメモる。  
+結論だけ書くと、変数`styles`にはThemeオブジェクトの`components.Badge.baseStyle`プロパティパスに格納されている以下のオブジェクトが格納される。
+
+```ts
+{
+  fontSize: "xs",
+  fontWeight: "bold",
+  px: 1,
+  rounded: "sm",
+  textTransform: "uppercase"
+}
+```
+
+次にこの部分を見ていく。
+
+```ts
+  const variantStyles = getModifierStyles<IsMulti>(
+    props.variant,
+    componentStyle.variants ?? {},
+    { theme, colorMode, themeScheme, ...args },
+  )({ isMulti })
+```
+
+1つ前の処理から類推すれば、「変数`variantStyles`にはThemeオブジェクトの`components.Badge.variants`プロパティパスに格納されているオブジェクトが格納されるのでは？」と推測できる。
+
+今、`props.variant`は`"outline"`という文字列が格納されていることは自明。  
+一方で、`componentStyle.variants`にはどんな値が格納されているだろう？
+
+今までは省略していたので、ちゃんと確認しておく。
+
+```ts
+// packages/theme/components/badge.ts
+{
+  solid: ({ theme: t, colorMode: m, colorScheme: c = "primary" }) => ({
+    bg: [tintColor(`${c}.600`, 24)(t, m), shadeColor(`${c}.600`, 16)(t, m)],
+    color: `white`,
+  }),
+  subtle: ({ theme: t, colorMode: m, colorScheme: c = "primary" }) => ({
+    bg: [
+      isGray(c) ? `${c}.50` : `${c}.100`,
+      shadeColor(`${c}.300`, 58)(t, m),
+    ],
+    color: [`${c}.800`, isGray(c) ? `${c}.50` : `${c}.200`],
+  }),
+  outline: ({ theme: t, colorMode: m, colorScheme: c = "primary" }) => {
+    const color = mode(
+      getColor(`${c}.500`)(t, m),
+      getColor(
+        isGray(c) ? `${c}.100` : transparentizeColor(`${c}.400`, 0.92)(t, m),
+      )(t, m),
+    )(m)
+
+    return {
+      color,
+      boxShadow: `inset 0 0 0px 1px ${color}`,
+    }
+  },
+}
+```
+
+この結果から分かるように、`componentStyle.variants`下の各プロパティの値には`theme`、`colorMode`、`themeScheme`（をまとめたオブジェクト）を引数として受けとり、それを下に計算されたスタイル（をまとめたオブジェクト）を返す関数が定義されていることが分かる。
+
+ということは、この処理でやっていることは`props.variant`に対応する関数を実行して、その結果として得られるスタイルを`variantStyles`に格納していることである事が分かる。
+その際、パラメータとして`theme`、`colorMode`、`themeScheme`、`args`（をまとめたオブジェクト）を渡している。
+
+```ts
+const variantStyles = getModifierStyles<IsMulti>(
+  props.variant,
+  componentStyle.variants ?? {},
+  { theme, colorMode, themeScheme, ...args },
+)({ isMulti })
+```
+
+だいたい想像がついたところで`getModifierStyles`関数の実装を確認する。
+
+```ts
+const getModifierStyles =
+  <IsMulti extends boolean = false>(
+    value: ResponsiveObject<string> | ColorModeArray<string> | string,
+    modifierStyles: ModifierStyles,
+    props: UIStyleProps,
+  ) =>
+  ({ isMulti = false }: GetStylesOptions): Styles<IsMulti> => {
+    let styles: Styles<IsMulti> = {}
+
+    if (isArray(value)) {
+      const [lightStyles, darkStyles] = getColorModeStyles<IsMulti>(
+        value,
+        modifierStyles,
+        props,
+      )({ isMulti })
+
+      styles = merge(lightStyles, darkStyles)
+    } else if (isObject(value)) {
+      styles = getResponsiveStyles<IsMulti>(
+        value,
+        modifierStyles,
+        props,
+      )({ isMulti })
+    } else {
+      styles = getStyles<IsMulti>(modifierStyles[value], props)({ isMulti })
+    }
+
+    return styles as Styles<IsMulti>
+  }
+```
+
+今、`getModifierStyles`関数の第一引数`value`の実引数は`props.variant`、つまり`"outline"`という文字列が格納されている。  
+なので、ここで実際に実行されるのはこの分岐である。
+
+```ts
+styles = getStyles<IsMulti>(modifierStyles[value], props)({ isMulti })
+```
+
+ここで、`getStyles`関数の実装も確認する。
+
+```ts
+const getStyles =
+  <IsMulti extends boolean = false>(
+    stylesOrFunc: UIStyle | Record<string, UIStyle>,
+    props: UIStyleProps,
+  ) =>
+  ({ isMulti = false, query }: GetStylesOptions): Styles<IsMulti> => {
+    let styles = runIfFunc(stylesOrFunc, props)
+
+    if (isMulti) {
+      for (const [key, styleOrFunc] of Object.entries(
+        (styles ?? {}) as Record<string, UIStyle>,
+      )) {
+        const style = runIfFunc(styleOrFunc, props)
+
+        if (query) {
+          styles = merge(styles, { [key]: { [query]: style } })
+        } else {
+          styles = merge(styles, { [key]: style })
+        }
+      }
+    } else if (query) {
+      return { [query]: styles } as Styles<IsMulti>
+    }
+
+    return styles as Styles<IsMulti>
+  }
+```
+
+これまでに登場している関数の呼び出し関係をきっちり整理していくと、引数`stylesOrFunc`には以下の関数が、
+
+```ts
+({ theme: t, colorMode: m, colorScheme: c = "primary" }) => {
+    const color = mode(
+      getColor(`${c}.500`)(t, m),
+      getColor(
+        isGray(c) ? `${c}.100` : transparentizeColor(`${c}.400`, 0.92)(t, m),
+      )(t, m),
+    )(m)
+
+    return {
+      color,
+      boxShadow: `inset 0 0 0px 1px ${color}`,
+    }
+  }
+```
+
+引数`props`には`theme`、`colorMode`、`themeScheme`、`args`（をまとめたオブジェクト）が格納されている。  
+
+`isMulti`が`false`であることは自明なので、`getStyles`の処理は「`stylesOrFunc`に渡された関数を、`props`を引数として渡して実行した結果を`styles`に格納する」という処理に相当する。
+
+<Aside>
+`runIfFunc`関数は、以下のような関数。
+
+* 第一引数`valOrFunc`に渡されたオブジェクトが関数であればその関数に第二引数`args`を渡して実行した結果を返す。
+* 第一引数`valOrFunc`に渡されたオブジェクトが関数でなければ`valOrFunc`オブジェクトをそのまま返す。
+
+```ts
+export const runIfFunc = <T, U extends Array<any>>(
+  valOrFunc: T | ((...funcArgs: U) => T),
+  ...args: U
+): T => (isFunction(valOrFunc) ? valOrFunc(...args) : valOrFunc)
+```
+</Aside>
+
+引数`stylesOrFunc`に渡されている関数の中身の詳細は一旦忘れることにして、この関数の実行結果は以下のオブジェクトになる。
+
+```ts
+{
+  "color": "#895af6",
+  "boxShadow": "inset 0 0 0px 1px #895af6"
+}
+```
+
+このオブジェクトが変数`modifierStyles`に格納される。
+
+次にここの処理だが、ここは以下の理由から`undefined`という空オブジェクトが格納される（詳しい考察は省略）。
+
+* 今`Badge`コンポーネントに`size`はpropsとして設定してない
+* `componentStyle.sizes`には対応するテーマが定義されていない
+
+```ts
+const sizeStyles = getModifierStyles<IsMulti>(
+  props.size,
+  componentStyle.sizes ?? {},
+  { theme, colorMode, themeScheme, ...args },
+)({ isMulti })
+```
+
+そして、このようにして計算した`sizeStyles`と`variantStyles`を`styles`にマージしていく。  
+
+```ts
+styles = merge(styles, sizeStyles)
+styles = merge(styles, variantStyles)
+```
+
+その結果得られる`styles`が`stylesRef.current`と一致していなければ`stylesRef.current`を`styles`の値で上書きする。  
+今`stylesRef.current`は空オブジェクト（`{}`）のはずなので、この上書きは当然実行される。
+
+```ts
+const isStylesEqual = isEqual(stylesRef.current, styles)
+
+if (!isStylesEqual) stylesRef.current = styles
+```
+
+ここでやっと`if(!isProcessSkip)`内の処理は完了する。
+
+`setStyles`関数の最後の処理として、この部分を実行する。
+
+```ts
+const isPropsEqual = isEqual(propsRef.current, props)
+
+if (!isPropsEqual) propsRef.current = props
+
+```
+
+今、`propsRef.current`は空オブジェクト`{}`であり`props`は以下のオブジェクトが格納されている。  
+そのため、`propsRef.current`は`props`の値で当然上書きされる。
+
+```ts
+{
+  colorScheme: "secondary",
+  variant: "outline",
+  children: "Badge"
+}
+```
+
+<Aside>
+`props`は以下の処理結果が格納されていることを思い出す。
+
+```ts
+props = merge(componentStyle?.defaultProps ?? {}, filterUndefined(props))
+```
+</Aside>
+
+#### 3. 計算結果を返す
+
+そして、`setStyles`は`stylesRef.current`と`propsRef.current`をまとめたタプルを返す。
+
+```ts
+return [stylesRef.current, propsRef.current]
+```
+
+実際の値は以下のようになっているはず。
+
+```ts
+[
+  {
+    fontSize: "xs",
+    fontWeight: "bold",
+    px: 1,
+    rounded: "sm",
+    textTransform: "uppercase",
+    color: "#895af6",
+    boxShadow: "inset 0 0 0px 1px #895af6"
+  },
+  {
+    colorScheme: "secondary",
+    variant: "outline",
+    children: "Badge"
+  }
+]
+```
+
+### `omitThemeProps`
+
+`useComponentStyle`フックの処理を一通り確認できたところで、次に`omitThemeProps`関数を確認する。
+
+```ts
+const { className, ...rest } = omitThemeProps(mergedProps)
+```
+
+`omitThemeProps`関数は以下のような実装になっており、デフォルトでは`size`、`variant`、`colorScheme`プロパティに対応する値を除外したオブジェクトを返す。
+
+```ts
+export const omitThemeProps = <
+  T extends ThemeProps,
+  K extends Exclude<keyof T, "size" | "variant" | "colorScheme"> = never,
+>(
+  props: T,
+  keys: K[] = [],
+) => omitObject(props, ["size", "variant", "colorScheme", ...keys])
+```
+
+`mergedProps`は今このようなオブジェクトが格納されている。
+
+```ts
+{
+  colorScheme: "secondary",
+  variant: "outline",
+  children: "Badge"
+}
+```
+
+なので、`omitThemeProps`関数を実行した結果、変数`className`には`undefined`が、変数`rest`には
+
+```ts
+{
+  children: "Badge"
+}
+```
+
+というオブジェクトが格納される。
+
+### `CSSUIObject`
+
+次にこの部分について見ていく。
+
+```ts
+const css: CSSUIObject = {
+  display: "inline-block",
+  whiteSpace: "nowrap",
+  verticalAlign: "middle",
+  ...styles,
+}
+```
+
+ここでは、`Badge`コンポーネントに当て込みたいスタイルを一つのオブジェクトとしてまとめている。  
+
+変数`styles`には以下のオブジェクトが格納されているので、
+
+```ts
+{
+  fontSize: "xs",
+  fontWeight: "bold",
+  px: 1,
+  rounded: "sm",
+  textTransform: "uppercase",
+  color: "#895af6",
+  boxShadow: "inset 0 0 0px 1px #895af6"
+}
+```
+
+変数`css`は以下のオブジェクトが格納される。
+
+```ts
+{
+  display: "inline-block",
+  whiteSpace: "nowrap",
+  verticalAlign: "middle",
+  fontSize: "xs",
+  fontWeight: "bold",
+  px: 1,
+  rounded: "sm",
+  textTransform: "uppercase",
+  color: "#895af6",
+  boxShadow: "inset 0 0 0px 1px #895af6"
+}
+```
+
+
+<Aside>
+`CSSUIObject`型は、ざっくり言えばCSSのプロパティを表現する型。  
+`CSSUIObject`型の型定義はかなり複雑なので、ここでは深く確認しない。
+
+<LinkPreview id='https://github.com/yamada-ui/yamada-ui/blob/main/packages/core/src/css/css.types.ts' />
+</Aside>
+
+### JSXを返す
+
+最後に、今までの結果を素に、ネイティブの`<span>`タグにスタイルを当てたJSXを返す。  
+これが`Badge`コンポーネントになる。
+
+```ts
+return (
+  <ui.span
+    ref={ref}
+    className={cx("ui-badge", className)}
+    __css={css}
+    {...rest}
+  />
+)
+```
+
+ここの処理はYamada UIにおける`factory`の概念を理解する必要がある。  
+これは別のページにメモる。
