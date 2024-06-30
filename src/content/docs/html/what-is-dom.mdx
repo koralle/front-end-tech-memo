@@ -1,0 +1,39 @@
+---
+title: DOMって結局何？
+description: DOMって結局何なんなのか頭の中を整理する
+---
+
+import { LinkPreview } from 'astro-embed'
+import { Aside } from '@astrojs/starlight/components'
+
+## DOMとはなにか？
+
+DOMとはなにか、いろいろなドキュメントを調べていた時にMDNのページの表現が一番しっくりきた。
+
+> ドキュメントオブジェクトモデル (DOM) はウェブ文書のためのプログラミングインターフェイスです。ページを表現するため、プログラムが文書構造、スタイル、内容を変更することができます。 DOM は文書をノードとオブジェクトで表現します。そうやって、プログラミング言語をページに接続することができます。
+
+<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/API/Document_Object_Model/Introduction' />
+
+## DOMとJavaScriptの関係
+
+DOMとJavaScriptは密接な関係にあるが、DOMを操作するためのDOM APIはJavaScriptの標準仕様ではない。  
+その仕様はJavaScriptではなくWeb標準で規定されている。
+
+<Aside>
+Node.jsの存在を思い出してみる。Node.jsはブラウザ以外でもJavaScriptを動作させるようにする実行環境である。  
+DOM APIがJavaScriptの標準仕様として規定されていればNode.jsでもDOM APIを使用できるはずだ。
+</Aside>
+
+## じゃあDOM APIの仕様はどこにある？
+
+ここにある。WHATWGが管理しているということで良いのかな？
+
+<LinkPreview id='https://dom.spec.whatwg.org/' />
+
+## 参考
+
+<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/API/Document_Object_Model' />
+
+<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/API/Document_Object_Model/Introduction' />
+
+<LinkPreview id='https://web.dev/articles/critical-rendering-path/constructing-the-object-model?hl=ja' />
