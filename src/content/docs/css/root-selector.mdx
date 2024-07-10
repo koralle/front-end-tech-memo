@@ -1,0 +1,94 @@
+---
+title: rootセレクタってよくわからないよね
+description: CSSのrootセレクタってあんまり他人に説明できないのでここで整理しておきたい
+---
+
+import { LinkPreview } from 'astro-embed'
+import { Aside } from '@astrojs/starlight/components'
+
+## rootセレクタ (`:root`)って何？
+
+とりあえず、MDNのドキュメントから引用してみる。
+
+<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/CSS/:root' />
+
+> `:root`はCSSの擬似クラスで、文書を表すツリーのルート要素を選択します。 HTMLでは`:root`は`<html>`要素を表し、詳細度が高いことを除けば`html`セレクターと同等です。
+
+ざっくりとした定義は理解できた。だけどいくつか気になった点がある。
+
+1. 「HTMLでは」ということは、他のコンテキストでも`:root`セレクタが使われているはずだ。それは具体的になんだろう？
+2. `:root`セレクタと`html`セレクタの詳細度はどちらが高いのだろう？
+
+## 1. HTML以外のコンテキストで使われる`:root`セレクタ
+
+調べた感じ、HTML以外では以下の3つのコンテキストで使われるようだ。
+
+* SVG
+* XML
+* Web Components
+
+### SVG
+
+SVGのコンテキストでは、`:root`セレクタは`<svg>`要素のルートを表す。
+
+例えば、以下のSVGは黒い正円。
+
+```html
+<svg width="100" height="100">
+  <circle cx="50" cy="50" r="40" />
+</svg>
+```
+
+ここに以下のCSSを適用すると、この黒い正円は青色になる。
+
+```css
+:root {
+  // すべてのSVGコンテキスト全体に適用される。
+  fill: blue;
+}
+```
+
+なので、HTMLの構造が以下のようになっている場合、
+
+```html
+<html>
+  <body>
+    <svg width="100" height="100">
+      <circle cx="50" cy="50" r="40" />
+    </svg>
+  </body>
+</html>
+```
+
+このCSSを適用すると、ブラウザには黒背景に黄色い正円が表示される。  
+`:root`セレクタがHTMLコンテキストにおけるルート要素（この場合は`<html>`要素）と、SVGコンテキストにおけるルート要素（この場合は`<svg>`要素）を同時に表現していることが分かる。
+
+```css
+:root {
+  fill: yellow;
+  background-color: black;
+}
+```
+<Aside type="caution">
+  正直、この挙動を定義している仕様書が見つからない...どこにあるんだ
+</Aside>
+
+### XML
+
+XMLのコンテキストでも`:root`セレクタが使えるらしい？その場合はXML文書のルートってことになるっぽい。
+
+### Web Components
+
+Web Componentsのコンテキストでも`:root`セレクタが使えるらしい？  
+詳細に調べても得るものは少なそう。
+
+## 2. `:root`セレクタと`html`セレクタの詳細度の比較
+
+結論から。**`:root`セレクタの方が`html`セレクタより詳細度が高い。**
+
+これはこのページの内容を読めば明らかなのだが、`:root`セレクタはあくまで疑似クラスセレクタとして振る舞う。  
+なので`:root`セレクタの詳細度は`(0, 1, 0)`である。
+
+一方で、`html`セレクタは要素型セレクタに該当するので、詳細度は`(0, 0, 1)`である。
+
+<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/CSS/Specificity' />
