@@ -1,0 +1,147 @@
+---
+title: CSSのカスタムプロパティをちゃんと学び直そう
+description: CSSのカスタムプロパティをちゃんと学び直そう
+---
+
+import { LinkPreview } from 'astro-embed'
+import { Aside } from '@astrojs/starlight/components'
+
+## CSSのカスタムプロパティって何
+
+別名CSS変数と言い、CSSのプロパティとして利用できる特定の値を再利用するための仕組み。  
+一般的なプログラミング言語における「変数」と同様に考えられる。
+
+<Aside>
+カスタムプロパティは親から値を継承する。この点は通常のCSSプロパティと同じ。
+</Aside>
+
+## 使い方
+
+プロパティ名として`--`空始まる文字列を、値にはCSSとして有効な値を指定する。
+
+```css
+:root {
+  --main-text-color: #3d3d3d;
+}
+```
+
+<Aside>
+一般的には、カスタムプロパティを`:root`セレクタ内でまとめて定義することが多い。  
+`:root`はHTMLコンテキスト下では`<html>`要素として扱われるので、HTML文書全体でカスタムプロパティを使用することができるようになる。
+
+必ずしも`:root`セレクタで定義する必要はなく、カスタムプロパティ自体のスコープを狭めるために他のセレクタ内（`.header`, `img`など）でも定義することができる。
+</Aside>
+
+<Aside type="caution">
+カスタムプロパティは、大文字小文字を区別するので注意。
+</Aside>
+
+こうして定義されたカスタムプロパティは、`var()`関数を使って参照することができる。
+
+```css
+:where(html, body) {
+  color: var(--main-text-color);
+}
+```
+
+### カスタムプロパティの継承
+
+カスタムプロパティは親から継承される。そのため、以下の例において`h1`セレクタ内で`--main-text-color`を参照すると、その値は`:root`セレクタで定義されている値を指す。
+
+```css
+:root {
+  --main-text-color: #3d3d3d;
+}
+
+:where(html, body) {
+  color: var(--main-text-color);
+}
+
+h1 {
+  color: var(--main-text-color);
+}
+```
+
+上記の例で`h1`セレクタ内で`--main-text-color`を再定義していると、その値は`h1`セレクタ内で定義されている値を指す。  
+下のCSSを適用すると、`h1`要素のテキストは赤（`red`）になる。
+
+ただし、`h1`セレクタ内で定義した`--main-text-color`のスコープは`h1`セレクタ内に留まる。  
+なので、例えば`h2`や`span`セレクタなどでは`:root`セレクタ内で定義された値を参照する。
+
+```css
+:root {
+  --main-text-color: #3d3d3d;
+}
+
+:where(html, body) {
+  color: var(--main-text-color);
+}
+
+h1 {
+  --main-text-color: red;
+  color: var(--main-text-color);
+}
+```
+
+### 代替値
+
+カスタムプロパティは代替値を定義しておくことができる。
+
+```css
+:root {
+  --main-text-color: #3d3d3d;
+}
+
+:where(html, body) {
+  color: var(--main-text-color, black);
+}
+```
+
+このようなCSSが定義されている時に`--main-text-color`を定義している行がコメントアウトされたとしよう。  
+その時、`:where(html, body)`セレクタ内で参照しようとする`--main-text-color`はHTML文書全体で存在しないので、代替値として`black`が適用される。
+
+## カスタムプロパティの命名の規則や考え方
+
+我らがcatnose先生が一つ記事にしてくれている。
+
+<LinkPreview id='https://zenn.dev/catnose99/articles/ee6787afe2182c' />
+
+また、この記事が参考になりそう。
+
+<LinkPreview id='https://dev.to/gnwabumere/mastering-css-custom-properties-best-practices-for-efficient-styling-1h09' />
+
+一応GPTに要約してもらった。
+
+> カスタムプロパティの命名規則と考え方
+> 1. 一貫性を保つ:
+> 命名規則を一貫して使用することで、コードの可読性と保守性が向上します。
+> 例えば、色に関するプロパティは`--color-`で始めるなど。
+> 2. 意味を持たせる:
+> プロパティ名はその役割や用途を明確に示すべきです。
+> 例: `--primary-color`や`--font-size-large`など。
+> 3. スコープを考慮する:
+> グローバルに使用するプロパティは`:root`で定義し、特定のコンポーネント内でのみ使用するプロパティはそのコンポーネント内で定義します。
+> 例: `:root { --global-padding: 1rem; }`や`.button { --button-padding: 0.5rem; }`。
+> 4. プレフィックスを使用する:
+> プロジェクトやコンポーネントごとにプレフィックスを付けることで、名前の衝突を避けることができます。
+> 例: `--projectname-componentname-propertyname`。
+> 5. ドキュメント化:
+> カスタムプロパティの一覧とその用途をドキュメント化しておくと、チーム全体での理解が深まります。
+
+ただ、この記事はまだまだ役に立ちそうなことがたくさん書いてあるので、時間がある時にしっかり読んでおきたい。
+
+## ブラウザの対応状況
+
+<LinkPreview id='https://caniuse.com/css-variables' />
+
+## 仕様書
+
+<LinkPreview id='https://www.w3.org/TR/css-variables/' />
+
+## 参考
+
+やっぱコリス最強。
+
+<LinkPreview id='https://coliss.com/articles/build-websites/operation/css/css-variables.html' />
+
+<LinkPreview id='https://coliss.com/articles/build-websites/operation/css/solution-when-custom-properties-do-not-work.html' />
