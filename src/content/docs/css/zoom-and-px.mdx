@@ -10,7 +10,7 @@ import { Aside } from '@astrojs/starlight/components'
 
 その答えはここにかなり詳しく書いてある。
 
-<LinkPreview id='https://web.dev/articles/device-pixel-content-box?hl=ja#background_css_pixels_canvas_pixels_and_physical_pixels' />
+<LinkPreview id="https://web.dev/articles/device-pixel-content-box?hl=ja#background_css_pixels_canvas_pixels_and_physical_pixels" />
 
 ### CSS Pixel
 
@@ -22,7 +22,8 @@ import { Aside } from '@astrojs/starlight/components'
 その結果、CSSで記述する`1px`とはその仮想ディスプレイ上における1pxのサイズを表現しており、これを**CSS Pixel**と呼ぶ。
 
 <Aside>
-実際に物理ディスプレイに描画する際には、このCSS Pixelは物理ピクセルに変換される。
+  実際に物理ディスプレイに描画する際には、このCSS
+  Pixelは物理ピクセルに変換される。
 </Aside>
 
 ### devicePixelRatio
@@ -36,8 +37,8 @@ import { Aside } from '@astrojs/starlight/components'
 
 この`devicePixelRatio`値は、ブラウザのズーム機能の影響を受ける。
 
-1. 例えば、自分が使っているArcブラウザの拡大率がデフォルト値である100%の状態で`devicePixelRatio`値を確認すると、`2`が表示された。  
-2. ここで、ブラウザの拡大率を75%に変更して`devicePixelRatio`値を確認すると、`1.5`と表示された。  
+1. 例えば、自分が使っているArcブラウザの拡大率がデフォルト値である100%の状態で`devicePixelRatio`値を確認すると、`2`が表示された。
+2. ここで、ブラウザの拡大率を75%に変更して`devicePixelRatio`値を確認すると、`1.5`と表示された。
 3. 次に、ブラウザの拡大率を125%に変更して`devicePixelRatio`地を確認すると`2.5`と表示された。
 
 この事から、ブラウザのズーム機能が一体何をしているのかが考察できる。  
@@ -46,11 +47,11 @@ import { Aside } from '@astrojs/starlight/components'
 この結果から、ズーム機能を使ってブラウザの拡大率を300%に変更すると、`devicePixelRatio`値は単純計算で6になるはずだが...私の環境では実際その通りになった。
 
 <Aside type="caution">
-この数字は自分の環境で確認した結果なので、他の環境では異なる可能性がある。
+  この数字は自分の環境で確認した結果なので、他の環境では異なる可能性がある。
 </Aside>
 
 ## 参考
 
-<LinkPreview id='https://web.dev/articles/device-pixel-content-box?hl=ja#background_css_pixels_canvas_pixels_and_physical_pixels' />
+<LinkPreview id="https://web.dev/articles/device-pixel-content-box?hl=ja#background_css_pixels_canvas_pixels_and_physical_pixels" />
 
-<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/API/Window/devicePixelRatio' />
+<LinkPreview id="https://developer.mozilla.org/ja/docs/Web/API/Window/devicePixelRatio" />

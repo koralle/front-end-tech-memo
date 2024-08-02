@@ -12,7 +12,7 @@ import { Aside } from '@astrojs/starlight/components'
 一般的なプログラミング言語における「変数」と同様に考えられる。
 
 <Aside>
-カスタムプロパティは親から値を継承する。この点は通常のCSSプロパティと同じ。
+  カスタムプロパティは親から値を継承する。この点は通常のCSSプロパティと同じ。
 </Aside>
 
 ## 使い方
@@ -30,10 +30,11 @@ import { Aside } from '@astrojs/starlight/components'
 `:root`はHTMLコンテキスト下では`<html>`要素として扱われるので、HTML文書全体でカスタムプロパティを使用することができるようになる。
 
 必ずしも`:root`セレクタで定義する必要はなく、カスタムプロパティ自体のスコープを狭めるために他のセレクタ内（`.header`, `img`など）でも定義することができる。
+
 </Aside>
 
 <Aside type="caution">
-カスタムプロパティは、大文字小文字を区別するので注意。
+  カスタムプロパティは、大文字小文字を区別するので注意。
 </Aside>
 
 こうして定義されたカスタムプロパティは、`var()`関数を使って参照することができる。
@@ -104,44 +105,45 @@ h1 {
 
 我らがcatnose先生が一つ記事にしてくれている。
 
-<LinkPreview id='https://zenn.dev/catnose99/articles/ee6787afe2182c' />
+<LinkPreview id="https://zenn.dev/catnose99/articles/ee6787afe2182c" />
 
 また、この記事が参考になりそう。
 
-<LinkPreview id='https://dev.to/gnwabumere/mastering-css-custom-properties-best-practices-for-efficient-styling-1h09' />
+<LinkPreview id="https://dev.to/gnwabumere/mastering-css-custom-properties-best-practices-for-efficient-styling-1h09" />
 
 一応GPTに要約してもらった。
 
 > カスタムプロパティの命名規則と考え方
+>
 > 1. 一貫性を保つ:
-> 命名規則を一貫して使用することで、コードの可読性と保守性が向上します。
-> 例えば、色に関するプロパティは`--color-`で始めるなど。
+>    命名規則を一貫して使用することで、コードの可読性と保守性が向上します。
+>    例えば、色に関するプロパティは`--color-`で始めるなど。
 > 2. 意味を持たせる:
-> プロパティ名はその役割や用途を明確に示すべきです。
-> 例: `--primary-color`や`--font-size-large`など。
+>    プロパティ名はその役割や用途を明確に示すべきです。
+>    例: `--primary-color`や`--font-size-large`など。
 > 3. スコープを考慮する:
-> グローバルに使用するプロパティは`:root`で定義し、特定のコンポーネント内でのみ使用するプロパティはそのコンポーネント内で定義します。
-> 例: `:root { --global-padding: 1rem; }`や`.button { --button-padding: 0.5rem; }`。
+>    グローバルに使用するプロパティは`:root`で定義し、特定のコンポーネント内でのみ使用するプロパティはそのコンポーネント内で定義します。
+>    例: `:root { --global-padding: 1rem; }`や`.button { --button-padding: 0.5rem; }`。
 > 4. プレフィックスを使用する:
-> プロジェクトやコンポーネントごとにプレフィックスを付けることで、名前の衝突を避けることができます。
-> 例: `--projectname-componentname-propertyname`。
+>    プロジェクトやコンポーネントごとにプレフィックスを付けることで、名前の衝突を避けることができます。
+>    例: `--projectname-componentname-propertyname`。
 > 5. ドキュメント化:
-> カスタムプロパティの一覧とその用途をドキュメント化しておくと、チーム全体での理解が深まります。
+>    カスタムプロパティの一覧とその用途をドキュメント化しておくと、チーム全体での理解が深まります。
 
 ただ、この記事はまだまだ役に立ちそうなことがたくさん書いてあるので、時間がある時にしっかり読んでおきたい。
 
 ## ブラウザの対応状況
 
-<LinkPreview id='https://caniuse.com/css-variables' />
+<LinkPreview id="https://caniuse.com/css-variables" />
 
 ## 仕様書
 
-<LinkPreview id='https://www.w3.org/TR/css-variables/' />
+<LinkPreview id="https://www.w3.org/TR/css-variables/" />
 
 ## 参考
 
 やっぱコリス最強。
 
-<LinkPreview id='https://coliss.com/articles/build-websites/operation/css/css-variables.html' />
+<LinkPreview id="https://coliss.com/articles/build-websites/operation/css/css-variables.html" />
 
-<LinkPreview id='https://coliss.com/articles/build-websites/operation/css/solution-when-custom-properties-do-not-work.html' />
+<LinkPreview id="https://coliss.com/articles/build-websites/operation/css/solution-when-custom-properties-do-not-work.html" />

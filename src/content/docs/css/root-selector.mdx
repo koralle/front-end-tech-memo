@@ -10,7 +10,7 @@ import { Aside } from '@astrojs/starlight/components'
 
 とりあえず、MDNのドキュメントから引用してみる。
 
-<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/CSS/:root' />
+<LinkPreview id="https://developer.mozilla.org/ja/docs/Web/CSS/:root" />
 
 > `:root`はCSSの擬似クラスで、文書を表すツリーのルート要素を選択します。 HTMLでは`:root`は`<html>`要素を表し、詳細度が高いことを除けば`html`セレクターと同等です。
 
@@ -23,9 +23,9 @@ import { Aside } from '@astrojs/starlight/components'
 
 調べた感じ、HTML以外では以下の3つのコンテキストで使われるようだ。
 
-* SVG
-* XML
-* Web Components
+- SVG
+- XML
+- Web Components
 
 ### SVG
 
@@ -69,6 +69,7 @@ SVGのコンテキストでは、`:root`セレクタは`<svg>`要素のルート
   background-color: black;
 }
 ```
+
 <Aside type="caution">
   正直、この挙動を定義している仕様書が見つからない...どこにあるんだ
 </Aside>
@@ -91,4 +92,4 @@ Web Componentsのコンテキストでも`:root`セレクタが使えるらし�
 
 一方で、`html`セレクタは要素型セレクタに該当するので、詳細度は`(0, 0, 1)`である。
 
-<LinkPreview id='https://developer.mozilla.org/ja/docs/Web/CSS/Specificity' />
+<LinkPreview id="https://developer.mozilla.org/ja/docs/Web/CSS/Specificity" />
