@@ -8,7 +8,7 @@
     "type": "git",
     "url": "git+https://github.com/koralle/front-end-tech-memo"
   },
-  "homepage": "https://memo.koralle-mgmg.com",
+  "homepage": "https://fe-memo.koralle-mgmg.com",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
