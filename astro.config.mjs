@@ -145,7 +145,7 @@ export default defineConfig({
           autogenerate: {
             directory: 'web'
           }
-        },
+        }
       ]
     }),
     mdx()
