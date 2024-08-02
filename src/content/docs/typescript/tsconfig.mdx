@@ -1,0 +1,70 @@
+---
+title: tsconfig.jsonの設定メモ
+description: tsconfig.jsonの設定メモ
+---
+
+import { LinkPreview } from 'astro-embed'
+
+## `tsBuildInfoFile`
+
+TypeScriptコンパイラには実はインクリメンタルビルド機能がある。  
+前回のビルド情報を用いて増分だけをビルドすることでビルド時間を短縮することができる機能である。
+
+`tsBuildInfoFile`プロパティには、その前回のビルド情報を保存する`*.tsbuildinfo`ファイルへのパスを指定する。
+
+```json
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
+  }
+}
+```
+
+このプロパティを直接指定しない場合の`*.tsbuildinfo`ファイルの保存先は一定のルールによって定まる。  
+詳しく確認するにはTypeScriptのドキュメントを読めば良い（丸投げ）。
+
+<LinkPreview id="https://www.typescriptlang.org/tsconfig/#tsBuildInfoFile" />
+
+## `allowSyntheticDefaultImports`
+
+この設定を`true`にすると、
+
+```ts
+import * as React from 'react'
+```
+
+を
+
+```ts
+import React from 'react'
+```
+
+としてインポートできるようになる。
+
+この設定は実行時ではなくコンパイル時にのみ影響があるらしい？
+
+<LinkPreview id="https://www.typescriptlang.org/tsconfig/#allowSyntheticDefaultImports" />
+
+## `lib`
+
+TypeScriptのコンパイラが使用する型定義を指定する。  
+この文脈で言う「型定義」とはユーザーが作成したものではなく、`DOM API`や最新のEcmaScriptの仕様に沿った型定義を指す。
+
+### `esnext`
+
+最新のEcmaScriptの仕様に沿った型定義のセット。
+
+### `dom`
+
+`DOM API`の仕様に沿った型定義のセット。
+
+### `dom.iterable`
+
+`NodeList`や`HTMLCollection`などのDOMに関するイテレータの型定義のセット。
+
+## `skipLibCheck`
+
+このプロパティを`true`に設定すると、`*.d.ts`ファイルに対する型チェックをスキップできる。  
+これにより型チェックの精度は犠牲になる代わりに実行時間を短縮することができる。
+
+<LinkPreview id="https://www.typescriptlang.org/tsconfig/#skipLibCheck" />
