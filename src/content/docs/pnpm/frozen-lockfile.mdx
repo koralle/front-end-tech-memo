@@ -1,0 +1,20 @@
+---
+title: frozen-lockfileオプション
+description: frozen-lockfileオプションについてメモ
+---
+
+import { LinkPreview } from 'astro-embed'
+import { Aside } from '@astrojs/starlight/components'
+
+## `--frozen-lockfile`オプションって何
+
+`package.json`と`pnpm-lock.yaml`の間に不整合が生じており同期が取れていなかった場合に、エラーで`pnpm install`を失敗させるオプション。
+
+<Aside type="tip">
+  CI環境（例：GitHub Actions, GitLab
+  CI）ではデフォルトで有効化されるので、明示的に指定する必要はない。
+</Aside>
+
+## 参考
+
+<LinkPreview id="https://pnpm.io/cli/install#--frozen-lockfile" />
