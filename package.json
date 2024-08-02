@@ -3,7 +3,7 @@
   "name": "front-end-tech-memo",
   "type": "module",
   "version": "0.0.1",
-  "packageManager": "pnpm@9.4.0",
+  "packageManager": "pnpm@9.6.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koralle/front-end-tech-memo"
@@ -21,25 +21,25 @@
     "build-cf-types": "wrangler types"
   },
   "dependencies": {
-    "@astro-community/astro-embed-link-preview": "^0.2.0",
-    "@astrojs/check": "^0.7.0",
+    "@astro-community/astro-embed-link-preview": "^0.2.1",
+    "@astrojs/check": "^0.9.1",
     "@astrojs/cloudflare": "^9.2.1",
-    "@astrojs/mdx": "^3.1.2",
-    "@astrojs/starlight": "^0.24.5",
-    "astro": "^4.11.3",
+    "@astrojs/mdx": "^3.1.3",
+    "@astrojs/starlight": "^0.25.3",
+    "astro": "^4.13.1",
     "astro-embed": "^0.7.2",
     "lite-youtube-embed": "^0.3.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.4"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240620.0",
-    "prettier": "^3.3.2",
-    "prettier-plugin-astro": "^0.14.0",
-    "wrangler": "^3.62.0"
+    "@cloudflare/workers-types": "^4.20240729.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "wrangler": "^3.68.0"
   },
   "engines": {
-    "node": ">=20.15.0",
-    "pnpm": ">=9.4.0",
+    "node": ">=20.16.0",
+    "pnpm": ">=9.6.0",
     "npm": "please use pnpm!",
     "yarn": "please use pnpm!"
   }
