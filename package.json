@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240729.0",
+    "lefthook": "^1.7.11",
     "prettier": "^3.3.3",
     "prettier-plugin-astro": "^0.14.1",
     "wrangler": "^3.68.0"
