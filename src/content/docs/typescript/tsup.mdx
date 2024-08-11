@@ -1,0 +1,123 @@
+---
+title: tsupの使い方メモ
+description: tsupの使い方メモ
+---
+
+import { LinkPreview } from 'astro-embed'
+
+import { Aside } from '@astrojs/starlight/components'
+
+## tsupって何
+
+少ない設定でTypeScriptコードをバンドルしてくれるツール。  
+内部で`esbuild`を使用している。
+
+<LinkPreview id="https://tsup.egoist.dev/" />
+
+<LinkPreview id="https://github.com/egoist/tsup" />
+
+## tsupを使うと何が嬉しいの
+
+## tsupの使い方
+
+```bash
+pnpm add -D tsup
+tsup src/index.ts
+```
+
+これだけで`dist/index.js`が生成される。
+
+## tsupの設定の仕方
+
+以下の`tsup.config.ts`を作成する。
+
+```ts
+import { defineConfig } from 'tsup'
+
+export default defineConfig({
+  entry: ['src/index.ts']
+})
+```
+
+すると、さっきの`tsup src/index.ts`は単に`tsup`と打つだけで同じ設定でバンドルを実行できる。
+
+### 型定義ファイル（`*.d.ts`）も同時に出力したい
+
+`tsup --dts`のように`--dts`オプションを付けるか、`tsup.config.ts`に`dts: true`を追加する。
+
+```ts
+import { defineConfig } from 'tsup'
+
+export default defineConfig({
+  entry: ['src/index.ts'],
+  dts: true
+})
+```
+
+<Aside type="caution" title="[tsconfig.json] incrementalとtsBuildInfoFile">
+  `tsconfig.json`の`.compilerOptions`に`incremental`が`true`になっているとき、`tsup --dts`を実行するとエラーが発生することがある。
+
+```
+error TS5074: Option '--incremental' can only be specified using tsconfig, emitting to single file or when option '--tsBuildInfoFile' is specified.
+```
+
+これを解決するためには、エラーメッセージにあるように`tsconfig.json`の`.compilerOptions`に`tsBuildInfoFile`プロパティを追加する。
+
+```json
+// tsconfig.json
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"
+  }
+}
+```
+
+</Aside>
+
+### ESM/CJSの両方に対応するときの`tsup`や`package.json`の書き方
+
+```ts
+// tsup.config.ts
+import { defineConfig } from 'tsup'
+
+export default defineConfig({
+  format: ['esm', 'cjs'],
+  entry: ['src/index.ts'],
+  sourcemap: true,
+  dts: true
+})
+```
+
+```json
+// package.json
+{
+  // ...
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "require": "./dist/index.cjs"
+      }
+    }
+  }
+  // ...
+}
+```
+
+## 参考
+
+<LinkPreview id="https://johnnyreilly.com/dual-publishing-esm-cjs-modules-with-tsup-and-are-the-types-wrong" />
+
+<LinkPreview id="https://t28.dev/blog/tsup-document-and-code-reading/" />
+
+<LinkPreview id="https://gist.github.com/x7ddf74479jn5/8dd150540b962252a40e9d3b4b6d211e" />
