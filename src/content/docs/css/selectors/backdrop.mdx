@@ -1,0 +1,90 @@
+---
+title: backdrop疑似セレクタについてメモ
+description: backdrop疑似セレクタについてメモ
+---
+
+import { LinkPreview } from 'astro-embed'
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components'
+
+## `::backdrop`って何？
+
+> CSS の ::backdrop 擬似要素は、何らかの要素が全画面モード (top layer) で表示される直下に直接表示される viewport の寸法のボックスです。
+
+<LinkPreview id="https://developer.mozilla.org/ja/docs/Web/CSS/::backdrop" />
+
+つまり、特定の要素が全画面モードになったときにスタイルを当てたいとき、`::backdrop`疑似要素を使用すればいいらしい。
+
+## サンプルコード
+
+<Tabs>
+  <TabItem label='HTML'>
+    ```html
+    // index.html
+    <!DOCTYPE html>
+    <html lang="ja">
+      <head>
+        <title>Home</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="stylesheet" href="styles.css" />
+      </head>
+      <body>
+        <button type="button" class="btn">ダイアログを開く</button>
+        <dialog class="dialog">
+          <button type="button" class="close">ダイアログを閉じる</button>
+          <secton>
+            <h1>ダイアログです</h1>
+            <p>これはダイアログです</p>
+          </section>
+        </dialog>
+        <script type="module" src="main.js"></script>
+      </body>
+    </html>
+    ```
+  </TabItem>
+  <TabItem label='CSS'>
+    ```css
+    // styles.css
+    :where(.dialog)::backdrop {
+      background-color: #db2626;
+      opacity: 0.5;
+    }
+    ```
+  </TabItem>
+  <TabItem label='JavaScript'>
+    ```js
+    // main.js
+    const openDialogButton = document.querySelector('.btn');
+    const closeDialogButton = document.querySelector('.close');
+    const dialog = document.querySelector('.dialog');
+
+    openDialogButton.addEventListener('click', () => {
+      dialog.showModal();
+    });
+
+    closeDialogButton.addEventListener('click', () => {
+      dialog.close();
+    });
+    ```
+
+  </TabItem>
+</Tabs>
+
+<Aside type="caution">
+この部分の`showModal()`を`show()`に変更してもダイアログは表示されるが、表示されるのはモーダルではないので`::backdrop`疑似要素が適用されない。
+
+```js
+openDialogButton.addEventListener('click', () => {
+  dialog.showModal()
+})
+```
+
+</Aside>
+
+## デモ
+
+<LinkPreview id="https://stackblitz.com/edit/stackblitz-starters-bjasn4?embed=1&theme=dark&view=preview" />
+
+## 参考
+
+<LinkPreview id="https://developer.mozilla.org/ja/docs/Web/CSS/::backdrop" />
