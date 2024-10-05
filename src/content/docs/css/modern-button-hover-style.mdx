@@ -1,0 +1,52 @@
+---
+title: button要素のモダンなホバースタイルの書き方の結論を自分の中で出してみた
+description: button要素のモダンなホバースタイルの書き方の結論を自分の中で出してみた
+---
+
+import { LinkPreview } from "astro-embed"
+
+## TL;DR
+
+```css
+@property --c-button-bg-hover {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #000;
+}
+
+@media (any-hover: hover) {
+  button:enabled:hover {
+    background-color: var(--c-button-bg-hover);
+  }
+}
+
+button:focus-visible {
+  background-color: var(--c-button-bg-hover);
+}
+```
+
+## ポイント
+
+* `@media (any-hover: hover) { ... }` でホバーを有効にする
+* `button:enabled:hover` でホバー時のスタイルを指定する
+* `button:focus-visible` でフォーカス時のスタイルを指定する
+
+### `@media (any-hover: hover) { ... }` でホバーを有効にする
+
+T.B.D
+
+### `button:enabled:hover` でホバー時のスタイルを指定する
+
+T.B.D
+
+### `button:focus-visible` でフォーカス時のスタイルを指定する
+
+T.B.D
+
+## 参考リンク
+
+<LinkPreview id="https://www.tak-dcxi.com/article/disable-hover-on-mobile-and-hover-implementation-example/" />
+<LinkPreview id="https://zenn.dev/yyoshioka/articles/4f21100be9f098" />
+<LinkPreview id="https://zenn.dev/kagan/articles/css-hover-style" />
+<LinkPreview id="https://developer.mozilla.org/ja/docs/Web/CSS/@media/any-hover" />
+<LinkPreview id="https://developer.mozilla.org/ja/docs/Web/CSS/:focus-visible" />
