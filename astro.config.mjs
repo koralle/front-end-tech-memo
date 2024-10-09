@@ -7,17 +7,7 @@ import mdx from '@astrojs/mdx'
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'server',
-  vite: {
-    ssr: {
-      external: ['node:url', 'node:path', 'node:child_process', 'node:fs', 'perf_hooks']
-    }
-  },
-  adapter: cloudflare({
-    runtime: {
-      mode: 'local'
-    }
-  }),
+  output: 'static',
   integrations: [
     starlight({
       title: "koralle's Front-End Tech Memo",
