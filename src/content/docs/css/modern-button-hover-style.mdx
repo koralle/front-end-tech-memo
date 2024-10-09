@@ -3,7 +3,7 @@ title: button要素のモダンなホバースタイルの書き方の結論を�
 description: button要素のモダンなホバースタイルの書き方の結論を自分の中で出してみた
 ---
 
-import { LinkPreview } from "astro-embed"
+import { LinkPreview } from 'astro-embed'
 
 ## TL;DR
 
@@ -27,9 +27,9 @@ button:focus-visible {
 
 ## ポイント
 
-* `@media (any-hover: hover) { ... }` でホバーを有効にする
-* `button:enabled:hover` でホバー時のスタイルを指定する
-* `button:focus-visible` でフォーカス時のスタイルを指定する
+- `@media (any-hover: hover) { ... }` でホバーを有効にする
+- `button:enabled:hover` でホバー時のスタイルを指定する
+- `button:focus-visible` でフォーカス時のスタイルを指定する
 
 ### `@media (any-hover: hover) { ... }` でホバーを有効にする
 
