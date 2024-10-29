@@ -40,7 +40,7 @@
     "wrangler": "^3.80.0"
   },
   "engines": {
-    "node": ">=20.18.0",
+    "node": ">=22.11.0",
     "pnpm": ">=9.12.0",
     "npm": "please use pnpm!",
     "yarn": "please use pnpm!"
